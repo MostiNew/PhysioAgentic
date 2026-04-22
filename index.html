@@ -11,25 +11,20 @@
       background: #f4f7fb;
       color: #1f2937;
     }
-
     .container {
       max-width: 900px;
       margin: auto;
       padding: 30px;
     }
-
     h1 {
       text-align: center;
       color: #1d4ed8;
-      margin-bottom: 10px;
     }
-
-    p.subtitle {
+    .subtitle {
       text-align: center;
       color: #6b7280;
       margin-bottom: 30px;
     }
-
     .card {
       background: white;
       padding: 25px;
@@ -37,29 +32,22 @@
       border-radius: 14px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
-
     label {
       display: block;
       margin-top: 15px;
       margin-bottom: 5px;
       font-weight: bold;
-      color: #374151;
     }
-
     input, textarea {
       width: 100%;
       padding: 12px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
-      font-size: 15px;
       box-sizing: border-box;
     }
-
     textarea {
-      min-height: 90px;
-      resize: vertical;
+      min-height: 80px;
     }
-
     button {
       margin-top: 20px;
       padding: 12px 18px;
@@ -67,111 +55,70 @@
       border-radius: 8px;
       background: #2563eb;
       color: white;
-      font-size: 15px;
       cursor: pointer;
     }
-
     button:hover {
-      background: #1e40af;
+      background: #1d4ed8;
     }
-
     #output {
       white-space: pre-wrap;
       background: #eef2ff;
       padding: 18px;
       border-radius: 10px;
       min-height: 150px;
-      line-height: 1.6;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 25px;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .loading {
-      color: #2563eb;
-      font-style: italic;
     }
   </style>
 </head>
 <body>
-
 <div class="container">
   <h1>PhysioAgentic</h1>
   <p class="subtitle">KI-gestützte Erstellung physiotherapeutischer Befunde</p>
 
   <div class="card">
     <label>Schmerz</label>
-    <input type="text" id="pain" placeholder="z.B. 6/10 rechte Schulter">
+    <input id="pain" placeholder="z.B. 6/10 rechte Schulter">
 
-    <label>Beweglichkeit (ROM)</label>
-    <input type="text" id="rom" placeholder="z.B. Abduktion 90°, Flexion 120°">
+    <label>ROM</label>
+    <input id="rom" placeholder="z.B. Abduktion 90°">
 
     <label>Kraft</label>
-    <input type="text" id="strength" placeholder="z.B. Außenrotation abgeschwächt">
+    <input id="strength" placeholder="z.B. Außenrotation abgeschwächt">
 
-    <label>Funktionelle Einschränkung</label>
-    <textarea id="function" placeholder="z.B. Schwierigkeiten beim Anziehen und Überkopfarbeiten"></textarea>
+    <label>Funktion</label>
+    <textarea id="function" placeholder="z.B. Schwierigkeiten beim Anziehen"></textarea>
 
-    <div class="actions">
-      <button onclick="generateBefund()">Befund generieren</button>
-      <button onclick="copyOutput()">Befund kopieren</button>
-    </div>
+    <button onclick="generateBefund()">Befund generieren</button>
   </div>
 
   <div class="card">
     <h3>Generierter Befund</h3>
     <div id="output">Noch kein Befund generiert.</div>
   </div>
-
-  <div class="footer">
-    Powered by PhysioAgentic on Hugging Face
-  </div>
 </div>
 
 <script>
 async function generateBefund() {
-  const pain = document.getElementById("pain").value.trim();
-  const rom = document.getElementById("rom").value.trim();
-  const strength = document.getElementById("strength").value.trim();
-  const func = document.getElementById("function").value.trim();
   const output = document.getElementById("output");
-
-  if (!pain && !rom && !strength && !func) {
-    output.innerText = "Bitte mindestens ein Feld ausfüllen.";
-    return;
-  }
 
   const prompt = `
 Du bist ein professioneller Assistent für physiotherapeutische Befunddokumentation.
 
-Erstelle einen kurzen, fachlich präzisen physiotherapeutischen Befund auf Deutsch basierend auf folgenden Angaben:
+Erstelle einen fachlich präzisen physiotherapeutischen Befund auf Deutsch:
 
-Schmerz: ${pain}
-ROM: ${rom}
-Kraft: ${strength}
-Funktion: ${func}
+Schmerz: ${document.getElementById("pain").value}
+ROM: ${document.getElementById("rom").value}
+Kraft: ${document.getElementById("strength").value}
+Funktion: ${document.getElementById("function").value}
 
-Formuliere einen professionellen Befundtext für die Dokumentation.
+Formuliere einen kurzen professionellen Befundtext.
 `;
 
-  output.innerHTML = '<span class="loading">Befund wird generiert...</span>';
+  output.innerText = "Befund wird generiert...";
 
   try {
-    const response = await fetch("https://api-inference.huggingface.co/models/TheMosti/PhysioAgentic", {
+    const response = await fetch("/api/generate", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
@@ -185,28 +132,16 @@ Formuliere einen professionellen Befundtext für die Dokumentation.
     const result = await response.json();
 
     if (result.error) {
-      output.innerText = "API Fehler: " + result.error;
+      output.innerText = "Fehler: " + result.error;
       return;
     }
 
-    if (Array.isArray(result) && result[0]?.generated_text) {
-      output.innerText = result[0].generated_text.trim();
-    } else {
-      output.innerText = "Keine gültige Antwort vom Modell.";
-    }
+    output.innerText = result[0]?.generated_text || "Keine Antwort erhalten.";
 
-  } catch (error) {
-    output.innerText = "Fehler: " + error.message;
+  } catch (err) {
+    output.innerText = "Serverfehler: " + err.message;
   }
 }
-
-function copyOutput() {
-  const text = document.getElementById("output").innerText;
-  navigator.clipboard.writeText(text)
-    .then(() => alert("Befund kopiert!"))
-    .catch(() => alert("Kopieren fehlgeschlagen."));
-}
 </script>
-
 </body>
 </html>

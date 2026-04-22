@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PhysioAgentic</title>
+</head>
+<body>
+
+<h2>Physio Befund Generator</h2>
+
+<textarea id="input" placeholder="Schmerz, ROM, Kraft, Funktion..." rows="6" cols="50"></textarea>
+
+<br><br>
+
+<button onclick="generate()">Generate</button>
+
+<pre id="output"></pre>
+
+<script>
+async function generate() {
+  const input = document.getElementById("input").value;
+  const output = document.getElementById("output");
+
+  output.innerText = "Generating...";
+
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      inputs: "Write physiotherapy report:\n" + input
+    })
+  });
+
+  const data = await res.json();
+
+  output.innerText =
+    data?.[0]?.generated_text ||
+    data?.raw ||
+    JSON.stringify(data);
+}
+</script>
+
+</body>
+</html>

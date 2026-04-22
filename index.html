@@ -1,147 +1,39 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhysioAgentic – Befund Generator</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f7fb;
-      color: #1f2937;
-    }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 30px;
-    }
-    h1 {
-      text-align: center;
-      color: #1d4ed8;
-    }
-    .subtitle {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 30px;
-    }
-    .card {
-      background: white;
-      padding: 25px;
-      margin-bottom: 25px;
-      border-radius: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      box-sizing: border-box;
-    }
-    textarea {
-      min-height: 80px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 18px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    #output {
-      white-space: pre-wrap;
-      background: #eef2ff;
-      padding: 18px;
-      border-radius: 10px;
-      min-height: 150px;
-    }
-  </style>
+  <title>PhysioAgentic</title>
 </head>
 <body>
-<div class="container">
-  <h1>PhysioAgentic</h1>
-  <p class="subtitle">KI-gestützte Erstellung physiotherapeutischer Befunde</p>
 
-  <div class="card">
-    <label>Schmerz</label>
-    <input id="pain" placeholder="z.B. 6/10 rechte Schulter">
+<h2>Physio Befund Generator</h2>
 
-    <label>ROM</label>
-    <input id="rom" placeholder="z.B. Abduktion 90°">
+<textarea id="input" placeholder="Schmerz, ROM, Kraft, Funktion" rows="6" cols="50"></textarea>
+<br><br>
 
-    <label>Kraft</label>
-    <input id="strength" placeholder="z.B. Außenrotation abgeschwächt">
+<button onclick="generate()">Generate</button>
 
-    <label>Funktion</label>
-    <textarea id="function" placeholder="z.B. Schwierigkeiten beim Anziehen"></textarea>
-
-    <button onclick="generateBefund()">Befund generieren</button>
-  </div>
-
-  <div class="card">
-    <h3>Generierter Befund</h3>
-    <div id="output">Noch kein Befund generiert.</div>
-  </div>
-</div>
+<pre id="output"></pre>
 
 <script>
-async function generateBefund() {
+async function generate() {
+  const input = document.getElementById("input").value;
   const output = document.getElementById("output");
 
-  const prompt = `
-Du bist ein professioneller Assistent für physiotherapeutische Befunddokumentation.
+  output.innerText = "Generating...";
 
-Erstelle einen fachlich präzisen physiotherapeutischen Befund auf Deutsch:
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      inputs: "Write a physiotherapy report:\n" + input
+    })
+  });
 
-Schmerz: ${document.getElementById("pain").value}
-ROM: ${document.getElementById("rom").value}
-Kraft: ${document.getElementById("strength").value}
-Funktion: ${document.getElementById("function").value}
+  const data = await res.json();
 
-Formuliere einen kurzen professionellen Befundtext.
-`;
-
-  output.innerText = "Befund wird generiert...";
-
-  try {
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 200,
-          temperature: 0.3,
-          return_full_text: false
-        }
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.error) {
-      output.innerText = "Fehler: " + result.error;
-      return;
-    }
-
-    output.innerText = result[0]?.generated_text || "Keine Antwort erhalten.";
-
-  } catch (err) {
-    output.innerText = "Serverfehler: " + err.message;
-  }
+  output.innerText = data?.[0]?.generated_text || JSON.stringify(data);
 }
 </script>
+
 </body>
 </html>

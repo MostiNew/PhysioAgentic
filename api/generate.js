@@ -5,22 +5,21 @@ export default async function handler(req, res) {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(req.body)
       }
     );
 
-    const text = await response.text();
+    const data = await response.text();
 
     try {
-      res.status(200).json(JSON.parse(text));
+      return res.status(200).json(JSON.parse(data));
     } catch {
-      res.status(200).json({ raw: text });
+      return res.status(200).json({ raw: data });
     }
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }

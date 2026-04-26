@@ -1,41 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+  <meta charset="UTF-8">
   <title>PhysioAgentic</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      background: #f5f7fa;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    textarea, input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      background: #0070f3;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #005ad1;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      background: #eef2f7;
+      padding: 15px;
+      min-height: 120px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
 
 <h2>Physio Befund Generator</h2>
 
-<textarea id="input" placeholder="Schmerz, ROM, Kraft, Funktion..." rows="6" cols="50"></textarea>
+<div class="card">
+  <label>Schmerz:</label>
+  <input type="text" id="pain" placeholder="z.B. 4/10 Schulter">
 
-<br><br>
+  <label>ROM:</label>
+  <input type="text" id="rom" placeholder="z.B. Flexion 120°, Abduktion 90°">
 
-<button onclick="generate()">Generate</button>
+  <label>Kraft:</label>
+  <input type="text" id="strength" placeholder="z.B. Kraft reduziert">
 
-<pre id="output"></pre>
+  <label>Funktion:</label>
+  <textarea id="function" placeholder="z.B. Schwierigkeiten beim Anziehen"></textarea>
+
+  <button onclick="generate()">Befund generieren</button>
+</div>
+
+<div class="card">
+  <h3>Ergebnis</h3>
+  <div id="output">Hier erscheint der Befund...</div>
+</div>
 
 <script>
 async function generate() {
-  const input = document.getElementById("input").value;
+  const pain = document.getElementById("pain").value;
+  const rom = document.getElementById("rom").value;
+  const strength = document.getElementById("strength").value;
+  const func = document.getElementById("function").value;
   const output = document.getElementById("output");
+
+  const prompt = `
+Erstelle einen professionellen physiotherapeutischen Befund auf Deutsch.
+
+Schmerz: ${pain}
+ROM: ${rom}
+Kraft: ${strength}
+Funktion: ${func}
+
+Strukturiere den Befund klinisch professionell.
+`;
 
   output.innerText = "Generating...";
 
-  const res = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      inputs: "Write physiotherapy report:\n" + input
-    })
-  });
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inputs: prompt })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  output.innerText =
-    data?.[0]?.generated_text ||
-    data?.raw ||
-    JSON.stringify(data);
+    output.innerText =
+      data?.[0]?.generated_text ||
+      data?.raw ||
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    output.innerText = "Error: " + err.message;
+  }
 }
 </script>
 
